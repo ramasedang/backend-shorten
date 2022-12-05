@@ -156,7 +156,7 @@ app.get("/go/:customurl", async (req, res) => {
   }
 });
 
-app.get("/```getshorten```", decodeIDToken, async (req, res) => {
+app.get("/getshorten", decodeIDToken, async (req, res) => {
   const { currentUser } = req;
   try {
     if (req.currentUser) {
