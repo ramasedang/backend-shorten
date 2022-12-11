@@ -53,9 +53,10 @@ app.post("/register", async (req, res) => {
     }
     const { email, password } = body;
     const user = await createUserWithEmailAndPassword(auth, email, password);
-    res.status(201).send({ status: true, message: "User created" });
+    res.status(201).send({ status: true, message: "User created", token: user.user.stsTokenManager.accessToken});
   } catch (error) {
     res.status(400).json({  status: false,message: "Gagal register" });
+    console.log(error);
   }
 });
 
@@ -206,6 +207,39 @@ app.patch("/updateshorten/:docid", decodeIDToken, async (req, res) => {
     res.json(error);
   }
 })
+
+app.post("/addanonimurl", async (req, res) => {
+  const { body } = req;
+  const { error } = shortenSchema.validate(body);
+  try {
+    if (error) {
+      throw new Error(error);
+    }
+    const { originalurl, customurl } = body;
+    const valid = validurl.isUri(originalurl);
+    const custom = randomstring.generate(6);
+    if (valid) {
+        const available = await availableCustomUrl(custom);
+        if (available) {
+          const shorturl = await adminDb.collection("shorten").add({
+            originalurl,
+            customurl: custom,
+            uid: "anonim",
+            click: 0,
+          });
+          res.status(201).json({ status: true, data: [{originalurl: originalurl, customurl: custom}] });
+        } else {
+          res.status(400).json({ status: false, message: "Custom url sudah ada" });
+        }
+      
+    } else {
+      res.status(400).json({ status: false, message: "Invalid URL" });
+    }
+  } catch (error) {
+    res.status(400).json({ status: false, message: "Gagal memendekan url" });
+  }
+})
+
 
 
 app.listen(port, () => {
